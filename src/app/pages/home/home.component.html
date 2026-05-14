@@ -1,0 +1,87 @@
+<!-- home.component.html -->
+<div class="home-wrapper">
+
+  <!-- Animated background particles -->
+  <div class="bg-particles">
+    <span *ngFor="let p of particles" class="particle" [style.left]="p.left" [style.top]="p.top" [style.animationDelay]="p.delay" [style.animationDuration]="p.duration"></span>
+  </div>
+
+  <!-- Top glow radial -->
+  <div class="bg-glow"></div>
+
+  <!-- Header / Logo -->
+  <header class="header">
+    <div class="logo-badge">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <path d="M14 2L25 8V20L14 26L3 20V8L14 2Z" stroke="#2E8BFF" stroke-width="1.5" fill="rgba(46,139,255,0.08)"/>
+        <text x="14" y="18" text-anchor="middle" fill="#2E8BFF" font-size="9" font-weight="700" font-family="'Orbitron', sans-serif">AI</text>
+      </svg>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- Title block -->
+    <div class="title-block">
+      <h1 class="title-main">AI CAR</h1>
+      <h1 class="title-accent">DIAGNOSTIC</h1>
+    </div>
+
+    <!-- Car Image Section -->
+    <div class="car-section">
+      <div class="car-glow-ring"></div>
+      <div class="scan-line"></div>
+      <div class="scan-line scan-line--2"></div>
+      <img
+        class="car-image"
+        src="/assets/images/car2.png"
+        alt="AI Diagnostic Car"
+        (error)="onImageError($event)"
+      />
+      <!-- Scanning overlay effect -->
+      <div class="scan-overlay"></div>
+      <!-- Corner brackets -->
+      <div class="bracket bracket--tl"></div>
+      <div class="bracket bracket--tr"></div>
+      <div class="bracket bracket--bl"></div>
+      <div class="bracket bracket--br"></div>
+    </div>
+
+    <!-- Stats strip -->
+    <div class="stats-strip">
+      <div class="stat-item" *ngFor="let stat of stats">
+        <span class="stat-value">{{ stat.value }}</span>
+        <span class="stat-label">{{ stat.label }}</span>
+      </div>
+    </div>
+
+    <!-- Tagline -->
+    <div class="tagline-block">
+      <p class="tagline-primary">Smart Detection, Better Driving</p>
+      <p class="tagline-secondary">We care about your car health</p>
+    </div>
+
+    <!-- Divider dots -->
+    <div class="dots-divider">
+      <span class="dot dot--active"></span>
+      <span class="dot"></span>
+      <span class="dot"></span>
+    </div>
+
+  </main>
+
+  <!-- CTA Button -->
+  <footer class="footer">
+    <button class="cta-btn" (click)="onStart()">
+      <span class="btn-text">Start</span>
+      <span class="btn-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M4 10H16M16 10L11 5M16 10L11 15" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <div class="btn-glow"></div>
+    </button>
+  </footer>
+
+</div>

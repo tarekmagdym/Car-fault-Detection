@@ -1,0 +1,218 @@
+<!-- main-page.component.html -->
+<div class="dashboard">
+
+  <!-- ── Background Effects ── -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow bg-glow--top"></div>
+  <div class="bg-glow bg-glow--center"></div>
+
+  <!-- ══════════════════════════════════════════════
+       HEADER
+  ══════════════════════════════════════════════ -->
+  <header class="header">
+    <button class="icon-btn" (click)="toggleMenu()" [class.active]="menuOpen" aria-label="Menu">
+      <span class="hamburger">
+        <i></i><i></i><i></i>
+      </span>
+    </button>
+
+    <h1 class="header__title">AI CAR DIAGNOSTIC</h1>
+
+    <button class="icon-btn notif-btn" aria-label="Notifications">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <span class="notif-dot"></span>
+    </button>
+  </header>
+
+  <!-- ══════════════════════════════════════════════
+       SCROLLABLE BODY
+  ══════════════════════════════════════════════ -->
+  <main class="dashboard__body" #dashBody>
+
+    <!-- ── Hero Section ── -->
+    <section class="hero">
+
+      <!-- Car Health Gauge -->
+      <div class="health-gauge" (click)="runFullScan()">
+        <svg class="gauge-svg" viewBox="0 0 120 120">
+          <!-- Track -->
+          <circle class="gauge-track" cx="60" cy="60" r="50" />
+          <!-- Progress -->
+          <circle
+            class="gauge-progress"
+            cx="60" cy="60" r="50"
+            [style.strokeDashoffset]="gaugeOffset"
+          />
+          <!-- Glow ring -->
+          <circle class="gauge-glow" cx="60" cy="60" r="50" />
+        </svg>
+        <div class="gauge-label">
+          <span class="gauge-title">CAR HEALTH</span>
+          <span class="gauge-value">{{ healthPercent }}<sup>%</sup></span>
+          <span class="gauge-status" [class]="'status-' + healthStatus.toLowerCase()">{{ healthStatus }}</span>
+        </div>
+      </div>
+
+      <!-- Car Image -->
+      <div class="hero__car">
+        <div class="car-rings">
+          <div class="ring ring--1"></div>
+          <div class="ring ring--2"></div>
+          <div class="ring ring--3"></div>
+        </div>
+        <img
+          class="car-img"
+          src="/assets/images/car3.png"
+          alt="Your Car"
+          (error)="onCarImgError($event)"
+        />
+        <div class="car-scanline"></div>
+      </div>
+    </section>
+
+    <!-- ── System Status Strip ── -->
+    <section class="status-strip">
+      <div
+        class="status-chip"
+        *ngFor="let sys of systems"
+        [class.status-chip--warning]="sys.status === 'Warning'"
+        [class.status-chip--error]="sys.status === 'Error'"
+        (click)="selectSystem(sys)"
+      >
+        <span class="chip-icon" [innerHTML]="sys.icon"></span>
+        <div class="chip-info">
+          <span class="chip-name">{{ sys.name }}</span>
+          <span class="chip-status">{{ sys.status }}</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Center CTA ── -->
+    <section class="cta-section">
+      <!-- Left mini card -->
+      <div class="mini-card mini-card--left" (click)="openFeature(features[0])">
+        <div class="mini-card__icon">{{ features[0].icon }}</div>
+        <p class="mini-card__title">{{ features[0].name }}</p>
+        <p class="mini-card__desc">{{ features[0].desc }}</p>
+        <button class="arrow-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <!-- Main scan button -->
+      <button class="scan-btn" (click)="runFullScan()" [class.scanning]="isScanning">
+        <div class="scan-btn__rings">
+          <div class="sbr sbr--1"></div>
+          <div class="sbr sbr--2"></div>
+          <div class="sbr sbr--3"></div>
+        </div>
+        <div class="scan-btn__inner">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M11 8v3l2 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          <span>{{ isScanning ? 'SCANNING…' : 'CHECK ALL THINGS IN CAR' }}</span>
+        </div>
+      </button>
+
+      <!-- Right mini card -->
+      <div class="mini-card mini-card--right" (click)="openFeature(features[1])">
+        <div class="mini-card__icon">{{ features[1].icon }}</div>
+        <p class="mini-card__title">{{ features[1].name }}</p>
+        <p class="mini-card__desc">{{ features[1].desc }}</p>
+        <button class="arrow-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- ── Feature Grid ── -->
+    <section class="features-grid">
+      <div
+        class="feature-card"
+        *ngFor="let f of features.slice(2); let i = index"
+        [class.feature-card--wide]="f.wide"
+        [style.animationDelay]="(i * 60) + 'ms'"
+        (click)="openFeature(f)"
+      >
+        <div class="feature-card__icon-wrap" [style.background]="f.iconBg">
+          <span class="feature-card__icon">{{ f.icon }}</span>
+        </div>
+        <div class="feature-card__body">
+          <h3 class="feature-card__title">{{ f.name }}</h3>
+          <p class="feature-card__desc">{{ f.desc }}</p>
+        </div>
+        <button class="arrow-btn arrow-btn--card">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ══════════════════════════════════════════════
+       BOTTOM NAV
+  ══════════════════════════════════════════════ -->
+  <nav class="bottom-nav">
+    <button
+      class="nav-item"
+      *ngFor="let tab of navTabs"
+      [class.nav-item--active]="activeTab === tab.id"
+      (click)="setTab(tab.id)"
+    >
+      <span class="nav-icon" [innerHTML]="tab.icon"></span>
+      <span class="nav-label">{{ tab.label }}</span>
+    </button>
+  </nav>
+
+  <!-- ══════════════════════════════════════════════
+       SCAN OVERLAY (modal)
+  ══════════════════════════════════════════════ -->
+  <div class="scan-overlay" *ngIf="isScanning" (click)="cancelScan()">
+    <div class="scan-modal" (click)="$event.stopPropagation()">
+      <div class="scan-modal__radar">
+        <div class="radar-ring r1"></div>
+        <div class="radar-ring r2"></div>
+        <div class="radar-ring r3"></div>
+        <div class="radar-sweep"></div>
+        <div class="radar-dot" *ngFor="let d of radarDots" [style.left]="d.x" [style.top]="d.y"></div>
+      </div>
+      <p class="scan-modal__title">SCANNING VEHICLE</p>
+      <div class="scan-modal__progress">
+        <div class="scan-progress-bar" [style.width]="scanProgress + '%'"></div>
+      </div>
+      <p class="scan-modal__pct">{{ scanProgress }}%</p>
+      <p class="scan-modal__step">{{ scanStep }}</p>
+      <button class="scan-modal__cancel" (click)="cancelScan()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       FEATURE DETAIL DRAWER
+  ══════════════════════════════════════════════ -->
+  <div class="drawer-overlay" *ngIf="activeFeature" (click)="closeFeature()">
+    <div class="drawer" (click)="$event.stopPropagation()">
+      <div class="drawer__handle"></div>
+      <div class="drawer__icon-wrap" [style.background]="activeFeature.iconBg">
+        <span class="drawer__icon">{{ activeFeature.icon }}</span>
+      </div>
+      <h2 class="drawer__title">{{ activeFeature.name }}</h2>
+      <p class="drawer__desc">{{ activeFeature.longDesc }}</p>
+      <div class="drawer__stats">
+        <div class="dstat" *ngFor="let s of activeFeature.stats">
+          <span class="dstat__val">{{ s.value }}</span>
+          <span class="dstat__key">{{ s.key }}</span>
+        </div>
+      </div>
+      <button class="drawer__cta" (click)="runFeatureScan(activeFeature)">
+        Run {{ activeFeature.name }}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+</div>
