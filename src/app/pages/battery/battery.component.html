@@ -1,0 +1,422 @@
+<!-- battery.component.html -->
+<div class="bat-page">
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <!-- ══ HEADER ══ -->
+  <header class="bat-header">
+    <button class="back-btn" (click)="cancelScan()" aria-label="Back">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+    <div class="header-center">
+      <span class="header-icon">🔋</span>
+      <div class="header-text">
+        <span class="header-title">BATTERY DIAGNOSTICS</span>
+        <span class="header-sub">AI Visual Analysis System</span>
+      </div>
+    </div>
+
+    <div class="header-badge" [class.live]="phase === 'scanning' || phase === 'analyzing'">
+      <span class="badge-dot"></span>
+      <span>{{ phase === 'scanning' || phase === 'analyzing' ? 'LIVE' : 'READY' }}</span>
+    </div>
+  </header>
+
+  <!-- ══════════════════════ IDLE ══════════════════════ -->
+  <div class="idle-view" *ngIf="phase === 'idle'">
+
+    <!-- Hero battery illustration -->
+    <div class="hero-zone">
+      <div class="hero-rings">
+        <div class="hr hr--1"></div>
+        <div class="hr hr--2"></div>
+        <div class="hr hr--3"></div>
+      </div>
+
+      <div class="bat3d">
+        <div class="bat3d__body">
+          <div class="bat3d__sheen"></div>
+          <div class="bat3d__terminal bat3d__terminal--pos">
+            <span class="term-mark">+</span>
+          </div>
+          <div class="bat3d__terminal bat3d__terminal--neg">
+            <span class="term-mark">−</span>
+          </div>
+          <div class="bat3d__label">12V · 60Ah</div>
+          <div class="bat3d__scan"></div>
+          <div class="bat3d__glow"></div>
+          <!-- cell indicators -->
+          <div class="bat3d__cells">
+            <div class="cell" *ngFor="let c of [1,2,3,4,5,6]"
+              [style.--ci]="c" [style.height.%]="40 + c * 8"></div>
+          </div>
+        </div>
+        <div class="bat3d__shadow"></div>
+      </div>
+
+      <!-- Floating metrics -->
+      <div class="float-metric fm--tl">
+        <span class="fm-key">VOLTAGE</span>
+        <span class="fm-val">12.6V</span>
+      </div>
+      <div class="float-metric fm--tr">
+        <span class="fm-key">HEALTH</span>
+        <span class="fm-val" style="color:var(--yellow)">67%</span>
+      </div>
+      <div class="float-metric fm--bl">
+        <span class="fm-key">CCA</span>
+        <span class="fm-val">480A</span>
+      </div>
+      <div class="float-metric fm--br">
+        <span class="fm-key">TEMP</span>
+        <span class="fm-val" style="color:var(--red)">31°C</span>
+      </div>
+    </div>
+
+    <!-- Info section -->
+    <div class="idle-body">
+      <h2 class="idle-title">AI Battery Health Detection</h2>
+      <p class="idle-desc">
+        Point your camera at the battery. Our AI engine will detect swelling, terminal corrosion, casing damage, and generate a full health report in seconds.
+      </p>
+
+      <div class="feature-chips">
+        <div class="fchip">
+          <span class="fchip-icon">🔍</span>
+          <span>Swelling Detection</span>
+        </div>
+        <div class="fchip">
+          <span class="fchip-icon">⚡</span>
+          <span>Voltage Analysis</span>
+        </div>
+        <div class="fchip">
+          <span class="fchip-icon">🌡️</span>
+          <span>Thermal Mapping</span>
+        </div>
+        <div class="fchip">
+          <span class="fchip-icon">🛡️</span>
+          <span>Corrosion Scan</span>
+        </div>
+      </div>
+
+      <div class="idle-error" *ngIf="cameraError">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+          <line x1="12" y1="8" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="12" cy="16.5" r="1" fill="currentColor"/>
+        </svg>
+        Camera permission denied. Please allow access and try again.
+      </div>
+
+      <button class="start-btn" (click)="startCamera()">
+        <span class="start-btn__pulse"></span>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M23 7l-7 5 7 5V7z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <rect x="1" y="5" width="15" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        START BATTERY SCAN
+      </button>
+
+      <p class="idle-hint">Tap to open camera · AI analysis takes ~8 seconds</p>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════ REQUESTING ══════════════════════ -->
+  <div class="center-fill" *ngIf="phase === 'requesting'">
+    <div class="req-anim">
+      <div class="req-ring r1"></div>
+      <div class="req-ring r2"></div>
+      <div class="req-ring r3"></div>
+      <svg class="req-icon" width="28" height="28" viewBox="0 0 24 24" fill="none">
+        <path d="M23 7l-7 5 7 5V7z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <rect x="1" y="5" width="15" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    </div>
+    <p class="center-label">Requesting camera access…</p>
+  </div>
+
+  <!-- ══════════════════════ SCANNING / ANALYZING ══════════════════════ -->
+  <div class="scan-view" *ngIf="phase === 'scanning' || phase === 'analyzing'">
+
+    <!-- ── Camera frame (fills screen) ── -->
+    <div class="cam-wrap">
+      <video #videoEl class="cam-feed" autoplay playsinline muted></video>
+
+      <!-- ── Simulation overlay layer ── -->
+      <div class="sim-layer">
+
+        <!-- Scrolling grid -->
+        <div class="sim-grid"
+          [style.background-position]="simGridOffset + 'px ' + simGridOffset + 'px'"></div>
+
+        <!-- Heatmap blobs -->
+        <div class="heatmap" *ngIf="showHeatmap" [style.opacity]="heatmapAlpha">
+          <div class="heat-blob heat-blob--critical"></div>
+          <div class="heat-blob heat-blob--warning"></div>
+          <div class="heat-blob heat-blob--ok"></div>
+        </div>
+
+        <!-- Sweep line -->
+        <div class="sweep" [style.top]="simSweepY + '%'" *ngIf="phase === 'scanning'">
+          <div class="sweep__trail"></div>
+          <div class="sweep__line"></div>
+          <div class="sweep__glow"></div>
+        </div>
+
+        <!-- Corner brackets -->
+        <div class="bracket b-tl"><span></span><span></span></div>
+        <div class="bracket b-tr"><span></span><span></span></div>
+        <div class="bracket b-bl"><span></span><span></span></div>
+        <div class="bracket b-br"><span></span><span></span></div>
+
+        <!-- Center reticle -->
+        <div class="reticle" *ngIf="phase === 'scanning'">
+          <div class="reticle__cross r-h"></div>
+          <div class="reticle__cross r-v"></div>
+          <div class="reticle__ring"></div>
+        </div>
+
+        <!-- Particles -->
+        <div class="particle"
+          *ngFor="let p of simParticles"
+          [style.left]="p.x + '%'"
+          [style.top]="p.y + '%'"
+          [style.width]="p.size + 'px'"
+          [style.height]="p.size + 'px'"
+          [style.background]="p.color"
+          [style.opacity]="p.life">
+        </div>
+
+        <!-- Detection pins (analyzing phase) -->
+        <ng-container *ngIf="phase === 'analyzing'">
+          <div class="det-pin"
+            *ngFor="let pin of activePins"
+            [style.left]="pin.x + '%'"
+            [style.top]="pin.y + '%'"
+            [class.det-pin--critical]="pin.severity === 'critical'"
+            [class.det-pin--warning]="pin.severity === 'warning'"
+            [class.det-pin--ok]="pin.severity === 'ok'"
+            [class.det-pin--pulse]="pin.pulse">
+            <div class="pin-ring pr1"></div>
+            <div class="pin-ring pr2"></div>
+            <div class="pin-core"></div>
+            <div class="pin-bubble">
+              <span class="pin-icon">{{ sevIcon(pin.severity) }}</span>
+              <span class="pin-name">{{ pin.label }}</span>
+              <span class="pin-conf">{{ pin.confidence }}%</span>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Scan bounding box (analyzing) -->
+        <div class="scan-box" *ngIf="phase === 'analyzing'">
+          <div class="sbox-corner sc-tl"></div>
+          <div class="sbox-corner sc-tr"></div>
+          <div class="sbox-corner sc-bl"></div>
+          <div class="sbox-corner sc-br"></div>
+          <div class="sbox-label">BATTERY DETECTED</div>
+        </div>
+
+        <!-- Analyzing neural net animation -->
+        <div class="neural-overlay" *ngIf="phase === 'analyzing' && analysisStage >= 1">
+          <div class="neural-text">
+            <span>AI ANALYZING</span>
+            <span class="n-dot nd1">.</span>
+            <span class="n-dot nd2">.</span>
+            <span class="n-dot nd3">.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── HUD overlays ── -->
+
+      <!-- Top-right: live telemetry -->
+      <div class="hud-telem" [class.analyzing]="phase === 'analyzing'">
+        <div class="telem-row" *ngFor="let line of simDataLines">
+          <span class="telem-line" [class.telem-line--active]="line">{{ line || '&nbsp;' }}</span>
+        </div>
+      </div>
+
+      <!-- Bottom progress bar -->
+      <div class="hud-progress" *ngIf="phase === 'scanning'">
+        <div class="prog-header">
+          <span class="prog-step">{{ scanStep }}</span>
+          <span class="prog-pct">{{ scanProgress | number:'1.0-0' }}%</span>
+        </div>
+        <div class="prog-track">
+          <div class="prog-fill" [style.width]="scanProgress + '%'">
+            <div class="prog-glow"></div>
+          </div>
+          <div class="prog-segments">
+            <div class="seg" *ngFor="let s of [1,2,3,4,5,6,7,8,9]"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analyzing result bar -->
+      <div class="hud-analyzing" *ngIf="phase === 'analyzing'">
+        <div class="anal-row">
+          <div class="anal-spinner"></div>
+          <span>Processing neural diagnostics…</span>
+          <div class="anal-spinner"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Cancel button -->
+    <button class="full-cancel" (click)="cancelScan()" *ngIf="phase === 'scanning'">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+      Cancel Scan
+    </button>
+
+  </div>
+
+  <!-- ══════════════════════ RESULT ══════════════════════ -->
+  <div class="result-view" *ngIf="phase === 'result' && result">
+
+    <!-- Health hero banner -->
+    <div class="result-hero">
+      <div class="rh-bg"></div>
+
+      <div class="rh-ring-wrap">
+        <svg class="rh-svg" viewBox="0 0 160 160">
+          <circle class="rh-track" cx="80" cy="80" r="66"/>
+          <circle class="rh-arc"
+            cx="80" cy="80" r="66"
+            [style.stroke]="healthColor"
+            [style.stroke-dashoffset]="415 - (415 * result.overallHealth / 100)"/>
+          <!-- tick marks -->
+          <circle class="rh-tick" cx="80" cy="16" r="2" [style.fill]="healthColor" opacity="0.6"/>
+          <circle class="rh-tick" cx="144" cy="80" r="2" [style.fill]="healthColor" opacity="0.6"/>
+          <circle class="rh-tick" cx="80" cy="144" r="2" [style.fill]="healthColor" opacity="0.6"/>
+          <circle class="rh-tick" cx="16" cy="80" r="2" [style.fill]="healthColor" opacity="0.6"/>
+        </svg>
+        <div class="rh-center">
+          <span class="rh-val" [style.color]="healthColor">{{ result.overallHealth }}</span>
+          <span class="rh-of">/ 100</span>
+          <span class="rh-lbl">BATTERY HEALTH</span>
+        </div>
+      </div>
+
+      <div class="rh-metrics">
+        <div class="rhm-card" *ngFor="let m of [
+          {k:'Voltage', v:result.voltage, c:'#22d37a'},
+          {k:'CCA',     v:result.cca,     c:'#00D4FF'},
+          {k:'Temp',    v:result.temperature, c:'#f97316'},
+          {k:'Charge',  v:result.chargeLevel+'%', c:healthColor}
+        ]" [style.--mc]="m.c">
+          <span class="rhm-val" [style.color]="m.c">{{ m.v }}</span>
+          <span class="rhm-key">{{ m.k }}</span>
+        </div>
+      </div>
+
+      <div class="rh-rec" [style.border-color]="healthColor + '44'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+          <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="12" cy="16" r="1" fill="currentColor"/>
+        </svg>
+        <span [style.color]="healthColor">{{ result.recommendation }}</span>
+      </div>
+    </div>
+
+    <!-- AI Summary -->
+    <div class="ai-summary">
+      <div class="ais-header">
+        <span class="ais-icon">🤖</span>
+        <span class="ais-title">AI DIAGNOSIS</span>
+      </div>
+      <p class="ais-text">{{ result.summary }}</p>
+    </div>
+
+    <!-- Issue cards -->
+    <div class="issues-wrap">
+      <div class="issues-header">
+        <span class="issues-title">DETECTED CONDITIONS</span>
+        <span class="issues-count">{{ result.issues.length }} found</span>
+      </div>
+      <div class="issue-card"
+        *ngFor="let issue of result.issues"
+        [style.--ic]="sevColor(issue.severity)"
+        (click)="openIssue(issue)">
+        <div class="ic-left">
+          <div class="ic-sev-bar"></div>
+          <div class="ic-icon-wrap">
+            <span class="ic-icon">{{ sevIcon(issue.severity) }}</span>
+          </div>
+        </div>
+        <div class="ic-body">
+          <div class="ic-top">
+            <span class="ic-label">{{ issue.label }}</span>
+            <span class="ic-badge" [style.color]="sevColor(issue.severity)"
+              [style.background]="sevColor(issue.severity) + '1a'">
+              {{ issue.severity | uppercase }}
+            </span>
+          </div>
+          <div class="ic-conf-bar">
+            <div class="ic-conf-fill"
+              [style.width]="issue.confidence + '%'"
+              [style.background]="sevColor(issue.severity)"></div>
+          </div>
+          <span class="ic-conf-label">{{ issue.confidence }}% confidence</span>
+        </div>
+        <div class="ic-arrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="result-actions">
+      <button class="ra-btn ra-btn--ghost" (click)="rescan()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <polyline points="1 4 1 10 7 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M3.51 15a9 9 0 1 0 .49-5.74" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Rescan
+      </button>
+      <button class="ra-btn ra-btn--primary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2"/>
+          <polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2"/>
+          <line x1="8" y1="13" x2="16" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Save Report
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ══ ISSUE DETAIL SHEET ══ -->
+  <div class="sheet-overlay" *ngIf="activeIssue" (click)="closeIssue()">
+    <div class="sheet" (click)="$event.stopPropagation()">
+      <div class="sheet-handle"></div>
+
+      <div class="sheet-sev" [style.background]="sevColor(activeIssue.severity) + '18'"
+        [style.border-color]="sevColor(activeIssue.severity) + '44'">
+        <span class="sheet-sev-icon">{{ sevIcon(activeIssue.severity) }}</span>
+        <span class="sheet-sev-label" [style.color]="sevColor(activeIssue.severity)">
+          {{ activeIssue.severity | uppercase }}
+        </span>
+        <span class="sheet-conf" [style.color]="sevColor(activeIssue.severity)">
+          {{ activeIssue.confidence }}% confidence
+        </span>
+      </div>
+
+      <h3 class="sheet-title">{{ activeIssue.label }}</h3>
+      <p class="sheet-detail">{{ activeIssue.detail }}</p>
+
+      <button class="sheet-close" (click)="closeIssue()">Close</button>
+    </div>
+  </div>
+
+</div>
