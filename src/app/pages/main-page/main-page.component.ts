@@ -65,7 +65,7 @@ export class MainPageComponent implements OnInit, OnDestroy {
   // ── Features ──────────────────────────────────────────────────────────────
   features: Feature[] = [
     { id: 'battery', name: 'Battery', path: '/battery', desc: 'Voltage & charging health', longDesc: 'Measures cold cranking amps, state of charge, and internal resistance.', icon: '🔋', color: '#22d37a', stats: [{ key: 'Voltage', value: '12.6V' }, { key: 'Health', value: '91%' }] },
-    { id: 'leak', name: 'Fluid Leak', path: '/leak', desc: 'Detect leaks under the car', longDesc: 'AI vision scans beneath your vehicle...', icon: '💧', color: '#2E8BFF', stats: [{ key: 'Oil', value: 'OK' }] },
+    { id: 'leak', name: 'Fluid Leak', path: '/fluid-leak', desc: 'Detect leaks under the car', longDesc: 'AI vision scans beneath your vehicle...', icon: '💧', color: '#2E8BFF', stats: [{ key: 'Oil', value: 'OK' }] },
     { id: 'smoke', name: 'Smoke', path: '/smoke', desc: 'Exhaust smoke analysis', longDesc: 'Analyzes exhaust smoke...', icon: '💨', color: '#a78bfa', stats: [{ key: 'CO Level', value: 'Normal' }] },
     { id: 'rust', name: 'Rust', path: '/rust', desc: 'Body corrosion detection', longDesc: 'Scans your vehicle body...', icon: '🛡️', color: '#f97316', stats: [{ key: 'Risk Level', value: 'Low' }] },
     { id: 'tire', name: 'Tires', path: '/tire', desc: 'Pressure, wear & alignment', longDesc: 'Full tire health...', icon: '⚫', color: '#00D4FF', stats: [{ key: 'Pressure', value: '32 PSI' }] },

@@ -6,6 +6,7 @@ import { BatteryComponent } from './pages/battery/battery.component';
 import { SmokeComponent } from './pages/smoke/smoke.component';
 import { RustComponent } from './pages/rust/rust.component';
 import { TireComponent } from './pages/tires/tires.component';
+import { FluidLeakComponent } from './pages/fluid-leak/fluid-leak.component';
 
 export const routes: Routes = [
 
@@ -42,7 +43,10 @@ export const routes: Routes = [
     path: 'tire',
     component: TireComponent
   },
-
+  {
+    path: 'fluid-leak',
+    component: FluidLeakComponent
+  },
   // If route not found
   {
     path: '**',
