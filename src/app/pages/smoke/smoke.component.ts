@@ -303,3 +303,5 @@ export class SmokeComponent implements OnInit, OnDestroy {
     return '#22d37a';
   }
 }
+
+
