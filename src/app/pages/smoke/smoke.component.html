@@ -1,1 +1,316 @@
-<p>smoke works!</p>
+<!-- smoke.component.html -->
+<div class="smoke-page">
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <!-- Floating particles -->
+  <div class="particles">
+    <div class="particle"
+      *ngFor="let p of particles; let i = index"
+      [style.left]="p.x + '%'"
+      [style.top]="p.y + '%'"
+      [style.width]="p.size + 'px'"
+      [style.height]="p.size + 'px'"
+      [style.opacity]="p.opacity"
+      [style.animationDuration]="(8 / p.speed) + 's'"
+      [style.animationDelay]="(i * 0.4) + 's'">
+    </div>
+  </div>
+
+  <!-- ── HEADER ─────────────────────────────────────────────────────────── -->
+  <header class="header">
+    <div class="header__left">
+      <span class="header__dot"></span>
+      <h1 class="header__title">SMOKE ANALYSIS</h1>
+    </div>
+    <div class="header__badge">
+      <span>💨</span>
+      <span>EXHAUST AI</span>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       PHASE: IDLE
+  ════════════════════════════════════════════════════════════════════════ -->
+  <main class="page-body" *ngIf="phase === 'idle'">
+    <div class="hero-card">
+      <div class="hero-icon-wrap">
+        <div class="hero-ring hr--1"></div>
+        <div class="hero-ring hr--2"></div>
+        <div class="hero-ring hr--3"></div>
+        <span class="hero-emoji">💨</span>
+      </div>
+
+      <h2 class="hero-title">Exhaust Smoke<br>Detection</h2>
+      <p class="hero-desc">
+        Point your camera at the vehicle's exhaust pipe. Our AI will analyze
+        smoke color, gas concentrations, and emission levels in real time.
+      </p>
+
+      <div class="capabilities">
+        <div class="cap-item" *ngFor="let c of [
+          { icon: '🎨', label: 'Smoke Color ID' },
+          { icon: '🧪', label: 'CO / HC / NOx' },
+          { icon: '📊', label: 'Opacity Meter' },
+          { icon: '⚕️', label: 'Emission Status' }
+        ]">
+          <span class="cap-icon">{{ c.icon }}</span>
+          <span class="cap-label">{{ c.label }}</span>
+        </div>
+      </div>
+
+      <div class="error-banner" *ngIf="cameraError">
+        <span>⚠️</span>
+        <span>{{ cameraError }}</span>
+      </div>
+
+      <button class="cta-btn" (click)="requestCamera()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M23 7l-7 5 7 5V7z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <rect x="1" y="5" width="15" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        Start Camera Scan
+      </button>
+
+      <p class="hint-text">Camera access required for AI analysis</p>
+    </div>
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       PHASE: REQUESTING
+  ════════════════════════════════════════════════════════════════════════ -->
+  <main class="page-body center" *ngIf="phase === 'requesting'">
+    <div class="request-card">
+      <div class="spinner-ring"></div>
+      <p class="request-title">Accessing Camera…</p>
+      <p class="request-sub">Please allow camera permission when prompted</p>
+    </div>
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       PHASE: SCANNING (live camera + overlay)
+  ════════════════════════════════════════════════════════════════════════ -->
+  <main class="page-body scan-body" *ngIf="phase === 'scanning'">
+
+    <!-- Camera view -->
+    <div class="cam-wrap">
+      <video #videoEl class="cam-video" autoplay playsinline muted></video>
+      <canvas #canvasEl class="cam-canvas"></canvas>
+
+      <!-- Corner brackets -->
+      <div class="bracket br--tl"></div>
+      <div class="bracket br--tr"></div>
+      <div class="bracket br--bl"></div>
+      <div class="bracket br--br"></div>
+
+      <!-- Scan line sweep -->
+      <div class="cam-scanline"></div>
+
+      <!-- Detection boxes -->
+      <div class="det-box"
+        *ngFor="let box of detectionBoxes"
+        [style.left]="box.x + '%'"
+        [style.top]="box.y + '%'"
+        [style.width]="box.w + '%'"
+        [style.height]="box.h + '%'"
+        [style.borderColor]="box.color">
+        <span class="det-label" [style.color]="box.color">{{ box.label }}</span>
+      </div>
+
+      <!-- Live readings HUD -->
+      <div class="hud-overlay">
+        <div class="hud-row">
+          <span class="hud-key">CO</span>
+          <span class="hud-val">{{ overlayReading.co }} ppm</span>
+        </div>
+        <div class="hud-row">
+          <span class="hud-key">HC</span>
+          <span class="hud-val">{{ overlayReading.hc }} ppm</span>
+        </div>
+        <div class="hud-row">
+          <span class="hud-key">OPQ</span>
+          <span class="hud-val">{{ overlayReading.opacity }}%</span>
+        </div>
+      </div>
+
+      <!-- AI badge -->
+      <div class="ai-badge">
+        <div class="ai-dot"></div>
+        <span>AI LIVE</span>
+      </div>
+    </div>
+
+    <!-- Progress panel -->
+    <div class="scan-panel">
+      <p class="scan-step">{{ scanStep }}</p>
+      <div class="scan-track">
+        <div class="scan-fill" [style.width]="scanProgress + '%'"></div>
+      </div>
+      <div class="scan-row">
+        <span class="scan-pct">{{ scanProgress | number:'1.0-0' }}%</span>
+        <span class="scan-hint">Point camera at exhaust pipe</span>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       PHASE: ANALYZING
+  ════════════════════════════════════════════════════════════════════════ -->
+  <main class="page-body center" *ngIf="phase === 'analyzing'">
+    <div class="analyze-card">
+      <div class="analyze-rings">
+        <div class="aring a1"></div>
+        <div class="aring a2"></div>
+        <div class="aring a3"></div>
+        <span class="analyze-icon">🧪</span>
+      </div>
+      <p class="analyze-title">AI ANALYSIS</p>
+      <p class="analyze-sub">Processing exhaust sample data…</p>
+      <div class="a-track">
+        <div class="a-fill" [style.width]="analyzeProgress + '%'"></div>
+      </div>
+      <p class="a-pct">{{ analyzeProgress | number:'1.0-0' }}%</p>
+    </div>
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       PHASE: RESULTS
+  ════════════════════════════════════════════════════════════════════════ -->
+  <main class="page-body results-body" *ngIf="phase === 'results' && result">
+
+    <!-- Status hero -->
+    <div class="result-hero"
+      [style.--sc]="severityConfig.color"
+      [style.--sg]="severityConfig.glow">
+      <div class="rh-glow"></div>
+
+      <div class="rh-icon-row">
+        <span class="rh-emoji">💨</span>
+        <div class="rh-status-badge">
+          <span class="rh-severity">{{ severityConfig.label }}</span>
+        </div>
+      </div>
+
+      <div class="rh-color-row">
+        <div class="smoke-swatch" [style.background]="colorHex(result.smokeColor)"></div>
+        <span class="rh-color-label" [style.color]="colorHex(result.smokeColor)">
+          {{ colorLabel(result.smokeColor) }}
+        </span>
+      </div>
+
+      <div class="rh-metrics">
+        <div class="rh-metric">
+          <span class="rh-mval" [style.color]="severityConfig.color">{{ result.opacity }}%</span>
+          <span class="rh-mkey">Opacity</span>
+        </div>
+        <div class="rh-divider"></div>
+        <div class="rh-metric">
+          <span class="rh-mval" [style.color]="severityConfig.color">{{ result.confidence }}%</span>
+          <span class="rh-mkey">AI Confidence</span>
+        </div>
+        <div class="rh-divider"></div>
+        <div class="rh-metric">
+          <span class="rh-mval"
+            [style.color]="result.emissionStatus === 'Pass' ? '#22d37a' : result.emissionStatus === 'Warning' ? '#f5c518' : '#ff4d6d'">
+            {{ result.emissionStatus }}
+          </span>
+          <span class="rh-mkey">Emission</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab nav -->
+    <div class="tab-nav">
+      <button class="tab-btn" [class.tab-btn--active]="activeTab === 'overview'" (click)="setTab('overview')">Overview</button>
+      <button class="tab-btn" [class.tab-btn--active]="activeTab === 'gases'"    (click)="setTab('gases')">Gas Levels</button>
+      <button class="tab-btn" [class.tab-btn--active]="activeTab === 'advice'"   (click)="setTab('advice')">Advice</button>
+    </div>
+
+    <!-- Tab: Overview -->
+    <div class="tab-content" *ngIf="activeTab === 'overview'">
+      <div class="diagnosis-card">
+        <div class="diag-header">
+          <span class="diag-icon">🔍</span>
+          <span class="diag-title">DIAGNOSIS</span>
+        </div>
+        <p class="diag-text">{{ result.diagnosis }}</p>
+      </div>
+
+      <div class="overview-grid">
+        <div class="ov-stat" *ngFor="let s of [
+          { key: 'CO Level',  val: result.coLevel + ' ppm',  color: gasColor(result.coLevel, 200, 500) },
+          { key: 'HC Level',  val: result.hcLevel + ' ppm',  color: gasColor(result.hcLevel, 300, 700) },
+          { key: 'NOx Level', val: result.noxLevel + ' ppm', color: gasColor(result.noxLevel, 150, 300) },
+          { key: 'Opacity',   val: result.opacity + '%',     color: gasColor(result.opacity, 20, 50)   }
+        ]">
+          <span class="ov-val" [style.color]="s.color">{{ s.val }}</span>
+          <span class="ov-key">{{ s.key }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Gas Levels -->
+    <div class="tab-content" *ngIf="activeTab === 'gases'">
+      <div class="gas-row" *ngFor="let g of [
+        { name: 'Carbon Monoxide',   key: 'CO',  val: result.coLevel,  unit: 'ppm', max: 800,  warn: 200, crit: 500  },
+        { name: 'Hydrocarbons',      key: 'HC',  val: result.hcLevel,  unit: 'ppm', max: 1000, warn: 300, crit: 700  },
+        { name: 'Nitrogen Oxides',   key: 'NOx', val: result.noxLevel, unit: 'ppm', max: 500,  warn: 150, crit: 300  },
+        { name: 'Smoke Opacity',     key: 'OPQ', val: result.opacity,  unit: '%',   max: 100,  warn: 20,  crit: 50   }
+      ]">
+        <div class="gas-top">
+          <div class="gas-name-row">
+            <span class="gas-key">{{ g.key }}</span>
+            <span class="gas-name">{{ g.name }}</span>
+          </div>
+          <span class="gas-val" [style.color]="gasColor(g.val, g.warn, g.crit)">{{ g.val }} {{ g.unit }}</span>
+        </div>
+        <div class="gas-track">
+          <div class="gas-fill"
+            [style.width]="(g.val / g.max * 100) + '%'"
+            [style.background]="gasColor(g.val, g.warn, g.crit)"
+            [style.boxShadow]="'0 0 8px ' + gasColor(g.val, g.warn, g.crit)">
+          </div>
+          <div class="gas-mark warn-mark" [style.left]="(g.warn / g.max * 100) + '%'"></div>
+          <div class="gas-mark crit-mark" [style.left]="(g.crit / g.max * 100) + '%'"></div>
+        </div>
+        <div class="gas-legend">
+          <span>0</span>
+          <span style="color:#f5c518">Warn {{ g.warn }}</span>
+          <span style="color:#ff4d6d">Crit {{ g.crit }}</span>
+          <span>{{ g.max }} {{ g.unit }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Advice -->
+    <div class="tab-content" *ngIf="activeTab === 'advice'">
+      <div class="advice-list">
+        <div class="advice-item" *ngFor="let r of result.recommendations; let i = index">
+          <div class="advice-num">{{ i + 1 }}</div>
+          <p class="advice-text">{{ r }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="result-actions">
+      <button class="action-btn action-btn--secondary" (click)="retryCamera()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+          <path d="M1 4v6h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M3.51 15a9 9 0 1 0 .49-4.95" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Scan Again
+      </button>
+      <button class="action-btn action-btn--primary" [style.--ac]="severityConfig.color">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2"/>
+          <polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        Save Report
+      </button>
+    </div>
+
+  </main>
+
+</div>

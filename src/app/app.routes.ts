@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { HomeComponent } from './pages/home/home.component';
 import { MainPageComponent } from './pages/main-page/main-page.component';
 import { BatteryComponent } from './pages/battery/battery.component';
+import { SmokeComponent } from './pages/smoke/smoke.component';
 
 export const routes: Routes = [
 
@@ -26,6 +27,10 @@ export const routes: Routes = [
   {
     path: 'battery',
     component: BatteryComponent
+  },
+  {
+    path: 'smoke',
+    component: SmokeComponent
   },
 
   // If route not found
